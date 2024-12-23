@@ -2,13 +2,14 @@ from PySide6.QtCore import Qt, QCoreApplication, QDate, QDateTime, QLocale, QMet
 from PySide6.QtGui import QColor, QPixmap, QGuiApplication
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QComboBox, 
                                QTableWidget, QTableWidgetItem, QAbstractItemView, QFileDialog, QScrollArea, 
-                               QFrame, QHeaderView, QDialog, QTextEdit, QLineEdit, QMessageBox)
+                               QFrame, QHeaderView, QDialog, QTextEdit, QLineEdit, QMessageBox,QScrollBar)
 import pandas as pd
 import math
 import os
 import sys
 import requests
 from datetime import datetime
+
 
 class MainWindow(QWidget):
 
@@ -297,7 +298,7 @@ class SecondWindow(QWidget,QApplication):
         self.table = QTableWidget(self.tree_frame)
         self.table.setStyleSheet("background-color: white;") 
         self.table.setGeometry(10,185,width-30,height-220)
-        
+
         #label Resumen
         self.label_resumen = QLabel("Resumen", self.tree_frame)
         self.label_resumen.setStyleSheet("color: white; font: 14pt Arial;")
