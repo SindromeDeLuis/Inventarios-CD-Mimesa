@@ -85,7 +85,8 @@ class MainWindow(QWidget):
 class SecondWindow(QWidget,QApplication):
     def __init__(self, file_path):
         super().__init__()
-        self.setWindowTitle("Aplicacion Gestion De Inventario")
+        self.setWindowTitle("Gestion de Inventario")
+        #SI SE QUIERE CAMBIAR LA CANTIDAD DE PALETAS POR DEFECTO CAMBIAR AQUI, POR DEFECTO 30 
         self.cantidad_de_paletas_a_enviar=30
         width,height = self.screens()[0].size().toTuple()
         height=height-70
@@ -110,7 +111,7 @@ class SecondWindow(QWidget,QApplication):
         self.imagen = QLabel(self.tree_frame)
         resized_pixmap = self.pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.imagen.setPixmap(resized_pixmap)
-        self.imagen.move(1100, 25)
+        self.imagen.move(width-150-25, 25) # x=1100
       
         # Cargar el archivo Excel
         self.df = pd.read_excel(self.file_path, skiprows=2)
@@ -256,10 +257,10 @@ class SecondWindow(QWidget,QApplication):
         
      
         # Botón dentro del QFrame
-        self.button1 = QPushButton("Generar Propuesta De SJ", self.tree_frame)
+        self.button1 = QPushButton("Generar Propuesta de SJ", self.tree_frame)
         self.button1.setStyleSheet("background-color: #94cc1c; color: white; font: 14pt Arial;")
         self.button1.setFixedSize(250, 55)
-        self.button1.move(1015, 110)
+        self.button1.move(width-250-25, 110)
         # Categoria ComboBox
         self.label_categoria = QLabel("Categoria", self.tree_frame)
         self.label_categoria.setStyleSheet("color: white; font: 14pt Arial;")
@@ -294,34 +295,36 @@ class SecondWindow(QWidget,QApplication):
         self.categorias_combobox.currentIndexChanged.connect(self.update_table)
         
         #Definir La tabla
-        
         self.table = QTableWidget(self.tree_frame)
         self.table.setStyleSheet("background-color: white;") 
         self.table.setGeometry(10,185,width-30,height-220)
 
-        #label Resumen
+
+        #Definir label Resumen
         self.label_resumen = QLabel("Resumen", self.tree_frame)
         self.label_resumen.setStyleSheet("color: white; font: 14pt Arial;")
         self.label_resumen.move(730, 25)
         
-        #Definir TextField 
+        #Definir TextField Resumen
         self.resumen= QTextEdit(self.tree_frame)
         self.resumen.setStyleSheet("color: black; font: 14pt Arial; background-color: white;")
         self.resumen.setGeometry(650, 55, 250, 100)
+
+
         #Definir label paletas
-        self.label_paletas = QLabel("Cantidad De Paletas", self.tree_frame)
+        self.label_paletas = QLabel("Cantidad de Paletas", self.tree_frame)
         self.label_paletas.setStyleSheet("color: white; font: 14pt Arial;")
         self.label_paletas.move(425, 75)
+
         #Definir TextFiel de paletas
         self.line_edit = QLineEdit(self.tree_frame)
-        
-    
-        #SI SE QUIERE CAMBIAR LA CANTIDAD DE PALETAS POR DEFECTO CAMBIAR AQUI POR DEFECTO 30 
-        self.line_edit.setText("30")
-        self.line_edit.setStyleSheet("color: black; font: 14pt Arial; background-color: white;")
+        self.line_edit.setText(str(self.cantidad_de_paletas_a_enviar))
+        self.line_edit.setStyleSheet("color: black; font: 14pt Arial; background-color: white; text-align:center;")
         self.line_edit.setGeometry(460, 100, 100, 25)
-        self.columns_to_display = [col for col in self.df.columns if col not in ['%Target Inv', '%Target Inv + Trans']]
+
+
         #Rellenar tabla con las columnas
+        self.columns_to_display = [col for col in self.df.columns if col not in ['%Target Inv', '%Target Inv + Trans']]
         self.table.setColumnCount(len(self.columns_to_display))
         self.table.setHorizontalHeaderLabels(self.columns_to_display)
         self.table.resizeColumnsToContents()
@@ -334,7 +337,6 @@ class SecondWindow(QWidget,QApplication):
         self.line_edit.textChanged.connect(self.update_table)
         
         
-    
     def update_table(self):
         
         # Se Toman los datos de filtrado que estan en los comboxs y se hace una copia
@@ -410,7 +412,7 @@ class SecondWindow(QWidget,QApplication):
                 origen = float(row["Inv en Origen TM"])
                 
                 try:   
-                    #Se calcula TargetOriginak
+                    #Se calcula TargetOriginal
                     TargetOriginal = ((transit_tm + planned_tm + inv_exist_tm) / target_inv) * 100
                     
                     Paleta_a_Tm = Factor_Conversion * paletas_inv
