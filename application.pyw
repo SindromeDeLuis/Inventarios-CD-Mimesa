@@ -88,10 +88,12 @@ class SecondWindow(QWidget,QApplication):
         self.setWindowTitle("Gestion de Inventario")
         #SI SE QUIERE CAMBIAR LA CANTIDAD DE PALETAS POR DEFECTO CAMBIAR AQUI, POR DEFECTO 30 
         self.cantidad_de_paletas_a_enviar=30
+        self.iteraciones = 0
         width,height = self.screens()[0].size().toTuple()
         height=height-70
         #self.setFixedSize(1200, 600) 
-        self.setFixedSize(width,height) 
+        self.setFixedSize(width,height)
+        self.move(0, 0)
         self.setStyleSheet("background-color: #003c72;")
         self.tm_estandar=30
         self.tm_adicional=0
@@ -112,49 +114,16 @@ class SecondWindow(QWidget,QApplication):
         resized_pixmap = self.pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.imagen.setPixmap(resized_pixmap)
         self.imagen.move(width-150-25, 25) # x=1100
-      
-        # Cargar el archivo Excel
-        self.df = pd.read_excel(self.file_path, skiprows=2)
 
-        # Definir las nuevas columnas
-        self.new_columns = [
-            'Branchplant Origen', 'Branchplant Destino', 'Localidad', 'Categoria', 'FAMILIA 3', 
-            'Código + Descripción del producto a despachar', 'UOM Prim', 'Factor TM/PL', 'Factor Prim/PL', 'Inv en Origen TM', 
-            'Inv en Destino TM', 'Planificado TM', 'Tránsito TM', 'Target de Inventario', 
-            '% Target Original', 
-        ]
-
-        # Renombrar las columnas existentes para que coincidan con las nuevas
-        self.df.rename(columns={
-            'Max of Factor PL - TM': 'Factor TM/PL',
-            'Max of Factor PL - Prim': 'Factor Prim/PL',
-            '%Target Inv + Trans + Plan (Python)': '% Target Original',
-            'Inv Exist TM': 'Inv en Destino TM',
-            'Cod + Descr': 'Código + Descripción del producto a despachar'
-        }, inplace=True)
-
-        # Reordenar las columnas según el nuevo formato
-        self.df = self.df[self.new_columns] 
-        self.df = self.df[~self.df['% Target Original'].isna()]
-        self.df = self.df[~self.df['Target de Inventario'].isna()]
-        self.df = self.df.fillna(0)
-        
-        # Asegurarse de que las columnas existan en el DataFrame, si no, agregarlas
-        for col in ['Código + Descripción del producto a despachar duplicado 1', 'Inv en Origen TM dupli',"Inv Final en Origen TM",'Paletas Sugeridas', 'Nuevo % Simulado', 
-            'Corr. Paletas', 'Inv Final Simulado', '% Con Corrección', 'Código + Descripción del producto a despachar duplicado 2', 
-            '% Target Original dupli', '% Con Corrección dupli']:
-            if col not in self.df.columns:
-                self.df[col] = 0  # Si no existe, la columna se agrega con valor 0
-                
-        columns_to_round = [ 'Inv en Origen TM','Target de Inventario','Inv en Origen TM dupli','Inv en Destino TM', 'Planificado TM', 'Tránsito TM']
-        self.df[columns_to_round] = self.df[columns_to_round].round(5)
+        self.set_dataframe()
+             
                   
         if 'Localidad' not in self.df.columns or 'Categoria' not in self.df.columns:
             return 
         self.localidades_unicas = self.df['Localidad'].unique().tolist()
         self.categorias_unicas = self.df['Categoria'].unique().tolist()
-        # Localidad ComboBox
 
+        # Localidad ComboBox
         self.label_localidad = QLabel("Localidad", self.tree_frame)
         self.label_localidad.setStyleSheet("color: white; font: 14pt Arial;")
         self.label_localidad.move(25, 25)
@@ -220,7 +189,7 @@ class SecondWindow(QWidget,QApplication):
         self.OrdenarPor_combobox.move(190, 45)
         self.OrdenarPor_combobox.currentIndexChanged.connect(self.update_table)
         
-        # Localidad Nivel
+        # label Nivel
         self.label_Nivel = QLabel("Nivel", self.tree_frame)
         self.label_Nivel.setStyleSheet("color: white; font: 14pt Arial;")
         self.label_Nivel.move(200, 100)
@@ -251,16 +220,29 @@ class SecondWindow(QWidget,QApplication):
         """)
         self.Nivel_combobox.setFixedSize(150, 50)  # Fijar tamaño del ComboBox
         self.Nivel_combobox.move(190, 125)
-
         self.Nivel_combobox.currentIndexChanged.connect(self.update_table)
-        
-        
+                
      
-        # Botón dentro del QFrame
+        # Generar SJ Botón dentro del QFrame
         self.button1 = QPushButton("Generar Propuesta de SJ", self.tree_frame)
         self.button1.setStyleSheet("background-color: #94cc1c; color: white; font: 14pt Arial;")
         self.button1.setFixedSize(250, 55)
         self.button1.move(width-250-25, 110)
+
+
+        # Reiniciar proceso Botón dentro del QFrame
+        self.reset_table_button = QPushButton("Reiniciar", self.tree_frame)
+        self.reset_table_button.setStyleSheet("background-color: #94cc1c; color: white; font: 14pt Arial;")
+        self.reset_table_button.setFixedSize(100, 32)
+        self.reset_table_button.move(460, 132)
+
+
+        # Iteraciones Label
+        self.label_Nivel = QLabel(f"Iteraciones: {self.iteraciones}", self.tree_frame)
+        self.label_Nivel.setStyleSheet("color: white; font: 12pt Arial;")
+        self.label_Nivel.move(650, 160)
+
+
         # Categoria ComboBox
         self.label_categoria = QLabel("Categoria", self.tree_frame)
         self.label_categoria.setStyleSheet("color: white; font: 14pt Arial;")
@@ -335,6 +317,45 @@ class SecondWindow(QWidget,QApplication):
         self.table.cellChanged.connect(self.calculo_Manual)
         self.button1.clicked.connect(self.guardarSj)
         self.line_edit.textChanged.connect(self.update_table)
+        self.reset_table_button.clicked.connect(self.reset_table)
+
+
+    def set_dataframe(self):
+        # Cargar el archivo Excel
+        self.df = pd.read_excel(self.file_path, skiprows=2)
+
+        # Definir las nuevas columnas
+        self.new_columns = [
+            'Branchplant Origen', 'Branchplant Destino', 'Localidad', 'Categoria', 'FAMILIA 3', 
+            'Código + Descripción del producto a despachar', 'UOM Prim', 'Factor TM/PL', 'Factor Prim/PL', 'Inv en Origen TM', 
+            'Inv en Destino TM', 'Planificado TM', 'Tránsito TM', 'Target de Inventario', 
+            '% Target Original', 
+        ]
+
+        # Renombrar las columnas existentes para que coincidan con las nuevas
+        self.df.rename(columns={
+            'Max of Factor PL - TM': 'Factor TM/PL',
+            'Max of Factor PL - Prim': 'Factor Prim/PL',
+            '%Target Inv + Trans + Plan (Python)': '% Target Original',
+            'Inv Exist TM': 'Inv en Destino TM',
+            'Cod + Descr': 'Código + Descripción del producto a despachar'
+        }, inplace=True)
+
+        # Reordenar las columnas según el nuevo formato
+        self.df = self.df[self.new_columns] 
+        self.df = self.df[~self.df['% Target Original'].isna()]
+        self.df = self.df[~self.df['Target de Inventario'].isna()]
+        self.df = self.df.fillna(0)
+        
+        # Asegurarse de que las columnas existan en el DataFrame, si no, agregarlas
+        for col in ['Código + Descripción del producto a despachar duplicado 1', 'Inv en Origen TM dupli',"Inv Final en Origen TM",'Paletas Sugeridas', 'Nuevo % Simulado', 
+            'Corr. Paletas', 'Inv Final Simulado', '% Con Corrección', 'Código + Descripción del producto a despachar duplicado 2', 
+            '% Target Original dupli', '% Con Corrección dupli']:
+            if col not in self.df.columns:
+                self.df[col] = 0  # Si no existe, la columna se agrega con valor 0
+                
+        columns_to_round = [ 'Inv en Origen TM','Target de Inventario','Inv en Origen TM dupli','Inv en Destino TM', 'Planificado TM', 'Tránsito TM']
+        self.df[columns_to_round] = self.df[columns_to_round].round(5)
         
         
     def update_table(self):
@@ -355,7 +376,6 @@ class SecondWindow(QWidget,QApplication):
         
         # Se duplican los valores de algunas colunmas como los duplicados o % nuevo simulado con Targer original
         # Para poder hacer la primera iteracion
-        
         filtered_df['Nuevo % Simulado'] = filtered_df['% Target Original']
         filtered_df['Código + Descripción del producto a despachar duplicado 1'] = filtered_df['Código + Descripción del producto a despachar']
         filtered_df['Código + Descripción del producto a despachar duplicado 2'] = filtered_df['Código + Descripción del producto a despachar']
@@ -364,7 +384,7 @@ class SecondWindow(QWidget,QApplication):
         filtered_df['Inv Final en Origen TM'] = filtered_df['Inv en Origen TM']
         
         
-        # palabre de control para el ciclo
+        # palabra de control para el ciclo
         paletas_agregadas = 0
         # Lista de pedidos que no pueden despacharle nada por falta de inventario
         procesados = set()
@@ -435,7 +455,7 @@ class SecondWindow(QWidget,QApplication):
         if ordenar_por and nivel:
             ascending = True if nivel == "Menor" else False
             filtered_df = filtered_df.sort_values(by=ordenar_por, ascending=ascending)
-        # Se parcea y se la agrega a los campos necesario el %
+        # Se parsea y se la agrega a los campos necesario el %
         self.table.setRowCount(filtered_df.shape[0])
         for row_idx, (_, row) in enumerate(filtered_df.iterrows()):
             for col_idx, col in enumerate(self.columns_to_display):
@@ -469,36 +489,38 @@ class SecondWindow(QWidget,QApplication):
 
         self.table.setEditTriggers(QAbstractItemView.DoubleClicked)
 
-    def calculo_Manual(self, row2, column):  
+        self.label_Nivel.setText(f"Iteraciones: {self.iteraciones}")
+
+    def calculo_Manual(self, row, column):  
         if(column == 20):
-            transit_tm = float(self.table.item(row2,12).text())
-            planned_tm = float(self.table.item(row2,11).text())
-            inv_exist_tm =float(self.table.item(row2,10).text())
-            target_inv = float(self.table.item(row2,13).text())
-            paletas_inv=float(self.table.item(row2,18).text()) 
-            paletas_Agregada=float(self.table.item(row2,20).text())
-            Factor_Conversion= float(self.table.item(row2,7).text())
+            transit_tm = float(self.table.item(row,12).text())
+            planned_tm = float(self.table.item(row,11).text())
+            inv_exist_tm =float(self.table.item(row,10).text())
+            target_inv = float(self.table.item(row,13).text())
+            paletas_inv=float(self.table.item(row,18).text()) 
+            paletas_Agregada=float(self.table.item(row,20).text())
+            Factor_Conversion= float(self.table.item(row,7).text())
             Paleta_A_TM=Factor_Conversion*(paletas_Agregada+paletas_inv)
-            origen= float(self.table.item(row2,9).text())
+            origen= float(self.table.item(row,9).text())
             
             origenfinal=round(origen-Paleta_A_TM,5)
             item3=QTableWidgetItem(str(origenfinal))
-            self.table.setItem(row2,17,item3)
+            self.table.setItem(row,17,item3)
             item3.setBackground(QColor(173, 216, 230)) 
         
-            valor=((transit_tm + planned_tm + inv_exist_tm+Paleta_A_TM) / target_inv ) * 100
+            valor = ((transit_tm + planned_tm + inv_exist_tm + Paleta_A_TM) / target_inv ) * 100
             valor = round(valor, 2)
         
             inv_final2=round(Paleta_A_TM+transit_tm+planned_tm+inv_exist_tm,2)
             item2=QTableWidgetItem(str(inv_final2))
-            self.table.setItem(row2,21,item2)
+            self.table.setItem(row,21,item2)
             item2.setBackground(QColor(173, 216, 230))  # Azul claro
             valor = f"{valor:.2f}%"
             item=QTableWidgetItem(valor)
             item3=QTableWidgetItem(valor)
-            self.table.setItem(row2,22,item)
+            self.table.setItem(row,22,item)
             item.setBackground(QColor(173, 216, 230))  # Azul claro
-            self.table.setItem(row2,25,item3)
+            self.table.setItem(row,25,item3)
             item3.setBackground(QColor(144, 238, 144))  # Verde claro
             
 
@@ -569,6 +591,15 @@ class SecondWindow(QWidget,QApplication):
                         filtered_data.append(row_data)
                     else:
                         pass
+                for idx, row2 in self.df.iterrows():
+                    if row2['Código + Descripción del producto a despachar'] == self.table.item(row, 5).text():
+                        self.df.at[idx,'Inv en Origen TM'] = float(self.table.item(row, 17).text())
+                        if row2['Localidad'].lower() == selected_localidad:
+                            paletas_inv=float(self.table.item(row,18).text()) 
+                            paletas_Agregada=float(self.table.item(row,20).text())
+                            Factor_Conversion= float(self.table.item(row,7).text())
+                            Paleta_A_TM=Factor_Conversion*(paletas_Agregada+paletas_inv)
+                            self.df.at[idx,'Planificado TM'] += Paleta_A_TM
 
             if not filtered_data:
                 self.mostrarMensaje("Información", "No se encontraron datos que coincidan con los criterios seleccionados.")
@@ -582,8 +613,19 @@ class SecondWindow(QWidget,QApplication):
             new_file_path = os.path.join(script_dir, file_name)
             df.to_excel(new_file_path, index=False)
             self.mostrarMensaje("Información", f"El archivo '{file_name}' fue creado con éxito.")
+            self.iteraciones += 1
+            self.update_table()
         except Exception as e:
             self.mostrarMensaje("Error", f"Se produjo un error: {e}", tipo='error')
+    
+
+    def reset_table(self):
+        self.df = pd.read_excel(self.file_path, skiprows=2)
+        self.line_edit.setText(str(self.cantidad_de_paletas_a_enviar))
+        self.iteraciones = 0
+        self.set_dataframe()
+        self.update_table()
+
 
     def porcentaje_a_float(self, porcentaje_str):
         try:
