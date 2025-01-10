@@ -33,7 +33,7 @@ class MainWindow(QWidget):
         self.layout = QVBoxLayout()
         # Centrar el título
         self.label_titulo = QLabel(
-            "Aplicacion Para Control De Inventario De Centros De Distribucion Grupo Mimesa")
+            "Aplicacion para Control de Inventario de Centros de Distribucion Grupo Mimesa")
         self.label_titulo.setStyleSheet("color: white; font: 12pt Arial;")
         self.label_titulo.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.label_titulo)
@@ -237,19 +237,21 @@ class SecondWindow(QWidget, QApplication):
             "background-color: #94cc1c; color: white; font: 14pt Arial;")
         self.button1.setFixedSize(250, 55)
         self.button1.move(width-250-25, 110)
+        self.button1.clicked.connect(self.guardarSj)
 
         # Reiniciar proceso Botón dentro del QFrame
         self.reset_table_button = QPushButton("Reiniciar", self.tree_frame)
         self.reset_table_button.setStyleSheet(
             "background-color: #94cc1c; color: white; font: 14pt Arial;")
         self.reset_table_button.setFixedSize(100, 32)
-        self.reset_table_button.move(460, 132)
+        self.reset_table_button.move(800, 133)
+        self.reset_table_button.clicked.connect(self.reset_table)
 
         # Iteraciones Label
-        self.label_Nivel = QLabel(
+        self.label_iteraciones = QLabel(
             f"Iteraciones: {self.iteraciones}", self.tree_frame)
-        self.label_Nivel.setStyleSheet("color: white; font: 12pt Arial;")
-        self.label_Nivel.move(650, 160)
+        self.label_iteraciones.setStyleSheet("color: white; font: 14pt Arial;")
+        self.label_iteraciones.move(650, 137)
 
         # Categoria ComboBox
         self.label_categoria = QLabel("Categoria", self.tree_frame)
@@ -287,18 +289,19 @@ class SecondWindow(QWidget, QApplication):
         # Definir La tabla
         self.table = QTableWidget(self.tree_frame)
         self.table.setStyleSheet("background-color: white;")
-        self.table.setGeometry(10, 185, width-30, height-220)
+        self.table.setGeometry(10, 188, width-20, height-210)
 
         # Definir label Resumen
-        self.label_resumen = QLabel("Resumen", self.tree_frame)
+        self.label_resumen = QLabel(f"", self.tree_frame)  # Resumen
         self.label_resumen.setStyleSheet("color: white; font: 14pt Arial;")
-        self.label_resumen.move(730, 25)
+        self.label_resumen.move(650, 75)  # (730, 25)
+        self.label_resumen.adjustSize()
 
         # Definir TextField Resumen
-        self.resumen = QTextEdit(self.tree_frame)
+        """self.resumen = QTextEdit(self.tree_frame)
         self.resumen.setStyleSheet(
             "color: black; font: 14pt Arial; background-color: white;")
-        self.resumen.setGeometry(650, 55, 250, 100)
+        self.resumen.setGeometry(650, 55, 250, 100)"""
 
         # Definir label paletas
         self.label_paletas = QLabel("Cantidad de Paletas", self.tree_frame)
@@ -311,6 +314,7 @@ class SecondWindow(QWidget, QApplication):
         self.line_edit.setStyleSheet(
             "color: black; font: 14pt Arial; background-color: white; text-align:center;")
         self.line_edit.setGeometry(460, 100, 100, 25)
+        self.line_edit.textChanged.connect(self.update_table)
 
         # Rellenar tabla con las columnas
         self.columns_to_display = [col for col in self.df.columns if col not in [
@@ -319,13 +323,10 @@ class SecondWindow(QWidget, QApplication):
         self.table.setHorizontalHeaderLabels(self.columns_to_display)
         self.table.resizeColumnsToContents()
         self.table.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.table.cellChanged.connect(self.calculo_Manual)
+
         # LLamar la funcion que calcula todo
         self.update_table()
-        # Declara a que acciones estaran pendiende los botones y Textfield
-        self.table.cellChanged.connect(self.calculo_Manual)
-        self.button1.clicked.connect(self.guardarSj)
-        self.line_edit.textChanged.connect(self.update_table)
-        self.reset_table_button.clicked.connect(self.reset_table)
 
     def set_dataframe(self):
         # Cargar el archivo Excel
@@ -495,7 +496,9 @@ class SecondWindow(QWidget, QApplication):
                 self.table.setItem(row_idx, col_idx, item)
 
         self.tm_adicional = 0
-        self.resumen.setText(f"Total paletas a enviar: {paletas_agregadas}")
+        self.label_resumen.setText(
+            f"Total paletas a enviar: {paletas_agregadas}")
+        self.label_resumen.adjustSize()
 
         # Bloquear edición en todas las columnas excepto la columna 20
         for row in range(self.table.rowCount()):
@@ -506,7 +509,7 @@ class SecondWindow(QWidget, QApplication):
 
         self.table.setEditTriggers(QAbstractItemView.DoubleClicked)
 
-        self.label_Nivel.setText(f"Iteraciones: {self.iteraciones}")
+        self.label_iteraciones.setText(f"Iteraciones: {self.iteraciones}")
 
     def calculo_Manual(self, row, column):
         if (column == 20):
@@ -547,8 +550,9 @@ class SecondWindow(QWidget, QApplication):
                 item = self.table.item(fila, 20)
                 if item is not None:
                     self.suma_total += float(item.text())
-            self.resumen.setText(f"Total paletas a enviar: {
-                                 self.tm_estandar+self.suma_total}")
+            self.label_resumen.setText(f"Total paletas a enviar: {
+                                       self.tm_estandar+self.suma_total}")
+            self.label_resumen.adjustSize()
         else:
             pass
 
