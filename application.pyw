@@ -11,6 +11,17 @@ import requests
 from datetime import datetime
 
 
+def get_image():
+    global img_data
+    url = "https://github.com/SindromeDeLuis/Inventarios-CD-Mimesa/blob/main/assets/GM%20Logo-2.png?raw=true"
+    response = requests.get(url)
+    if response.status_code == 200:
+        img_data = response.content
+    else:
+        img_data = None
+        print("Error al descargar la imagen")
+
+
 class MainWindow(QWidget):
 
     def __init__(self):
@@ -44,16 +55,12 @@ class MainWindow(QWidget):
             "background-color: #94cc1c; color: white; font: 14pt Arial;")
         self.button1.clicked.connect(self.open_second_window)
         self.layout.addWidget(self.button1, alignment=Qt.AlignCenter)
+        # Crear imagen logo
         self.contenedor_imagen = QWidget()
         self.contenedor_imagen.setGeometry(150, 200, 50, 50)
-        self.url = "https://drive.google.com/uc?export=download&id=1se96KZPovcb8BrDnaDmRHlAwKvEMito-"
-        self.response = requests.get(self.url)
-        if self.response.status_code == 200:
-            self.img_data = self.response.content
-        else:
-            print("Error al descargar la imagen")
+        get_image()
         self.pixmap = QPixmap()
-        self.pixmap.loadFromData(self.img_data)
+        self.pixmap.loadFromData(img_data)
         self.imagen = QLabel()
         self.imagen.setPixmap(self.pixmap)
         resized_pixmap = self.pixmap.scaled(
@@ -103,23 +110,17 @@ class SecondWindow(QWidget, QApplication):
         self.tm_estandar = 30
         self.tm_adicional = 0
         self.file_path = file_path
-        # Crear el QFrame
+        # Crear el QFrame imagen logo
         self.tree_frame = QFrame(self)
         self.tree_frame.setStyleSheet("background-color: #003c72;")
         self.tree_frame.setGeometry(0, 0, width, height)
-        self.url = "https://drive.google.com/uc?export=download&id=1se96KZPovcb8BrDnaDmRHlAwKvEMito-"
-        self.response = requests.get(self.url)
-        if self.response.status_code == 200:
-            self.img_data = self.response.content
-        else:
-            print("Error al descargar la imagen")
         self.pixmap = QPixmap()
-        self.pixmap.loadFromData(self.img_data)
+        self.pixmap.loadFromData(img_data)
         self.imagen = QLabel(self.tree_frame)
         resized_pixmap = self.pixmap.scaled(
-            150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            180, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.imagen.setPixmap(resized_pixmap)
-        self.imagen.move(width-150-25, 25)  # x=1100
+        self.imagen.move(width-180-20, 0)  # (1100, 25)
 
         self.set_dataframe()
 
