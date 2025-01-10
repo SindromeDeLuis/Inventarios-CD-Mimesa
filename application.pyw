@@ -641,7 +641,7 @@ class SecondWindow(QWidget, QApplication):
             columns = ['Sku', 'Cantidad', 'Precio total', 'UOM Prim',
                        'Branchplant Origen', 'Branchplant Destino']
             df = pd.DataFrame(filtered_data, columns=columns)
-            timestamp = datetime.now().strftime('%Y%m%d%H%M')
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
             file_name = f'Subida_Sj_{selected_localidad}_{
                 selected_categoria}_{timestamp}.xlsx'
             script_dir = os.path.dirname(os.path.abspath(__file__))
