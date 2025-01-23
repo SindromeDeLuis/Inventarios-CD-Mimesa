@@ -163,7 +163,8 @@ class SecondWindow(QWidget, QApplication):
         self.localidades_combobox.move(15, 45)
         self.localidades_combobox.currentIndexChanged.connect(
             self.update_table)
-        # Localidad OrdenarPor
+
+        # OrdenarPor
         self.label_OrdenarPor = QLabel("Ordenar Por", self.tree_frame)
         self.label_OrdenarPor.setStyleSheet("color: white; font: 14pt Arial;")
         self.label_OrdenarPor.move(200, 27)
@@ -258,7 +259,7 @@ class SecondWindow(QWidget, QApplication):
         self.label_categoria.setStyleSheet("color: white; font: 14pt Arial;")
         self.label_categoria.move(25, 100)
         self.categorias_combobox = QComboBox(self.tree_frame)
-        self.categorias_combobox.addItems(self.categorias_unicas)
+        self.categorias_combobox.addItems(["TODAS"] + self.categorias_unicas)
         self.categorias_combobox.setStyleSheet("""
             QComboBox {
                 background-color: #94cc1c;
@@ -363,6 +364,12 @@ class SecondWindow(QWidget, QApplication):
                 # Si no existe, la columna se agrega con valor 0
                 self.df[col] = 0
 
+        # Cambiar el dtype de las columnas específicas a float
+        columns_to_float = ['Inv Final Simulado',
+                            '% Con Corrección', '% Con Corrección dupli']
+        self.df[columns_to_float] = self.df[columns_to_float].astype(float)
+
+        # Redondear a 5 decimales las columnas numéricas específicas
         columns_to_round = ['Inv en Origen TM', 'Target de Inventario',
                             'Inv en Origen TM dupli', 'Inv en Destino TM', 'Planificado TM', 'Tránsito TM']
         self.df[columns_to_round] = self.df[columns_to_round].round(5)
@@ -381,8 +388,9 @@ class SecondWindow(QWidget, QApplication):
             filtered_df = filtered_df[filtered_df['Localidad']
                                       == selected_localidad]
         if selected_categoria:
-            filtered_df = filtered_df[filtered_df['Categoria']
-                                      == selected_categoria]
+            if selected_categoria != "TODAS":
+                filtered_df = filtered_df[filtered_df['Categoria']
+                                          == selected_categoria]
 
         # Se duplican los valores de algunas colunmas como los duplicados o % nuevo simulado con Targer original
         # Para poder hacer la primera iteracion
