@@ -343,6 +343,7 @@ class SecondWindow(QWidget, QApplication):
 
         # Renombrar las columnas existentes para que coincidan con las nuevas
         self.df.rename(columns={
+            "'BranchPlant'[Localidad]": 'Localidad',
             'Max of Factor PL - TM': 'Factor TM/PL',
             'Max of Factor PL - Prim': 'Factor Prim/PL',
             '%Target Inv + Trans + Plan (Python)': '% Target Original',
