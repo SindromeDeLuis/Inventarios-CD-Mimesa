@@ -595,7 +595,8 @@ class SecondWindow(QWidget, QApplication):
 
                 if item_localidad and item_categoria and item_tm:
                     localidad_match = selected_localidad in item_localidad.text().lower()
-                    categoria_match = selected_categoria in item_categoria.text().lower()
+                    categoria_match = selected_categoria in item_categoria.text(
+                    ).lower() or selected_categoria == "todas"
                     tm_value = float(item_tm.text())
 
                     if localidad_match and categoria_match and tm_value != 0:
@@ -605,7 +606,7 @@ class SecondWindow(QWidget, QApplication):
                             item = self.table.item(row, col)
                             if item:
                                 text = item.text()
-                                if col == 3:
+                                if col == 5:
                                     text = text.split(' ')[0]
                                 elif col == 16:
                                     item_col15 = self.table.item(row, 18)
@@ -620,6 +621,8 @@ class SecondWindow(QWidget, QApplication):
                                         text = str(valor3)
                                     else:
                                         text = '0'
+                                elif col in [0, 1]:
+                                    text = "0"+text
                                 row_data.append(text)
                             else:
                                 row_data.append('')
@@ -651,8 +654,8 @@ class SecondWindow(QWidget, QApplication):
                        'Branchplant Origen', 'Branchplant Destino']
             df = pd.DataFrame(filtered_data, columns=columns)
             timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            file_name = f'Subida_Sj_{selected_localidad}_{
-                selected_categoria}_{timestamp}.xlsx'
+            file_name = f'Subida_Sj_{selected_localidad.upper()}_{
+                selected_categoria.upper()}_{timestamp}.xlsx'
             script_dir = os.path.dirname(os.path.abspath(__file__))
             new_file_path = os.path.join(script_dir, file_name)
             df.to_excel(new_file_path, index=False)
